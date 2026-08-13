@@ -1,0 +1,73 @@
+# ==========================================
+# Python & Virtual Environments
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ==========================================
+# HuggingFace & AI Model Cache
+# ==========================================
+.cache/
+huggingface/
+models/
+
+# ==========================================
+# Operating System & IDE Files
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ==========================================
+# Java / Spring Boot (If in same repository)
+# ==========================================
+target/
+.gradle/
+build/
+*.jar
+*.war
+
+# ==========================================
+# Environment Variables & Secret Credentials
+# ==========================================
+.env
+.env.local
+.env.*.local
+
+# ==========================================
+# Temporary Test Files & Logs
+# ==========================================
+*.log
+mock_resume.txt
+temp/
+uploads/

@@ -1,0 +1,32 @@
+services:
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: ats_postgres
+    environment:
+      POSTGRES_DB: ats_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  python-ai-service:
+    build: ./python-ai-service
+    container_name: ats_python_ai
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=your-acual-openai-api-key
+
+  java-backend-service:
+    build: ./java-backend-service
+    container_name: ats_java_backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres-db
+      - python-ai-service
+
+volumes:
+  postgres_data:
