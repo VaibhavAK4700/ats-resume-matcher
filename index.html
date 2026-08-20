@@ -4,14 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ATS Resume Matcher</title>
+  
+  <!-- Suppresses 404 favicon logs on Railway -->
+  <link rel="icon" href="data:," />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-6">
 
-  <div class="max-w-2xl w-full bg-slate-800 rounded-2xl shadow-xl border border-slate-700 p-8">
-    <h1 class="text-3xl font-bold text-center text-indigo-400 mb-2">ATS Resume Matcher</h1>
-    <p class="text-center text-slate-400 mb-8 text-sm">Upload your resume and match it against a job description in real time.</p>
+  <div class="max-w-2xl w-full bg-slate-800 rounded-2xl shadow-xl border border-slate-700 p-8 space-y-8">
+    
+    <!-- Main Header -->
+    <div>
+      <h1 class="text-3xl font-bold text-center text-indigo-400 mb-2">ATS Resume Matcher</h1>
+      <p class="text-center text-slate-400 text-sm">Upload your resume and match it against a job description in real time.</p>
+    </div>
 
+    <!-- Match Form -->
     <form id="matchForm" class="space-y-6">
       
       <!-- Resume Upload -->
@@ -30,21 +38,17 @@
         </div>
       </div>
 
-<!-- Job Description -->
-<div>
-  <label for="jobDescription" class="block text-sm font-medium mb-2 text-slate-300">
-    Job Description
-  </label>
-  <textarea 
-    id="jobDescription" 
-    name="job_text" 
-    rows="4" 
-    placeholder="Please provide the job description text" 
-    onfocus="this.placeholder=''" 
-    onblur="this.placeholder='Please provide the job description text'" 
-    required
-    class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm placeholder-slate-500"></textarea>
-</div>
+      <!-- Job Description -->
+      <div>
+        <label for="jobDescription" class="block text-sm font-medium mb-2 text-slate-300">Job Description</label>
+        <textarea 
+          id="jobDescription" 
+          name="job_text" 
+          rows="4" 
+          placeholder="Please provide the job description text" 
+          required
+          class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm placeholder-slate-500"></textarea>
+      </div>
 
       <!-- Submit Button -->
       <button type="submit" id="submitBtn"
@@ -54,10 +58,10 @@
     </form>
 
     <!-- Error Alert -->
-    <div id="errorBox" class="hidden mt-6 bg-red-900/40 border border-red-500/50 text-red-200 text-sm p-4 rounded-xl"></div>
+    <div id="errorBox" class="hidden bg-red-900/40 border border-red-500/50 text-red-200 text-sm p-4 rounded-xl"></div>
 
-    <!-- Results Section -->
-    <div id="resultsCard" class="hidden mt-8 border-t border-slate-700 pt-6 space-y-4">
+    <!-- Match Results Section -->
+    <div id="resultsCard" class="hidden border-t border-slate-700 pt-6 space-y-4">
       <div class="flex items-center justify-between">
         <h2 class="text-xl font-bold text-slate-100">Match Results</h2>
         <span id="resultId" class="text-xs font-mono text-slate-400 bg-slate-700 px-2.5 py-1 rounded-md"></span>
@@ -83,13 +87,47 @@
       </div>
     </div>
 
+    <!-- AI Resume Rephraser Section -->
+    <div class="border-t border-slate-700 pt-6 space-y-4">
+      <h2 class="text-xl font-bold text-slate-100">AI Resume Rephraser</h2>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-2 text-slate-300">Skills to Add/Highlight</label>
+          <input type="text" id="userSkillsInput" placeholder="e.g. Java, Spring Boot, Microservices, Kubernetes" 
+            class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-slate-500">
+        </div>
+
+        <button type="button" id="rephraseBtn" onclick="handleRephrase()"
+          class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2">
+          <span>Rephrase & Tailor Resume</span>
+        </button>
+      </div>
+
+      <!-- Rephrased Output Box -->
+      <div id="rephrasedOutputBox" class="hidden bg-slate-900 border border-slate-700 rounded-xl p-4">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-sm font-semibold text-emerald-400">Optimized Resume Draft</h3>
+          <button onclick="navigator.clipboard.writeText(document.getElementById('rephrasedContent').innerText)" 
+            class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-600">
+            Copy Draft
+          </button>
+        </div>
+        <div id="rephrasedContent" class="text-xs text-slate-300 whitespace-pre-wrap font-mono leading-relaxed max-h-96 overflow-y-auto"></div>
+      </div>
+    </div>
+
   </div>
 
   <script>
+    // Dynamically set API host (uses same hostname when deployed on Railway)
+    const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://localhost:8080'
+      : '';
+
     const form = document.getElementById('matchForm');
     const resumeInput = document.getElementById('resumeInput');
     const fileNameDisplay = document.getElementById('fileName');
-    const dropZone = document.getElementById('dropZone');
     const submitBtn = document.getElementById('submitBtn');
     const resultsCard = document.getElementById('resultsCard');
     const errorBox = document.getElementById('errorBox');
@@ -115,7 +153,6 @@
         return;
       }
 
-      // Clear state & show loading
       errorBox.classList.add('hidden');
       resultsCard.classList.add('hidden');
       setLoading(true);
@@ -125,7 +162,7 @@
       formData.append('jobDescription', jobDesc);
 
       try {
-        const response = await fetch('http://localhost:8080/api/v1/resume/match', {
+        const response = await fetch(`${API_BASE}/api/v1/resume/match`, {
           method: 'POST',
           body: formData
         });
@@ -169,6 +206,51 @@
       resultsCard.classList.remove('hidden');
     }
 
+    async function handleRephrase() {
+      const file = resumeInput.files[0];
+      const skills = document.getElementById('userSkillsInput').value.trim();
+      const btn = document.getElementById('rephraseBtn');
+      const outputBox = document.getElementById('rephrasedOutputBox');
+      const contentBox = document.getElementById('rephrasedContent');
+
+      if (!file) {
+        alert("Please upload a PDF resume first.");
+        return;
+      }
+      if (!skills) {
+        alert("Please enter skills to incorporate.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<span>AI is generating draft...</span>`;
+
+      const formData = new FormData();
+      formData.append('resume', file);
+      formData.append('userSkills', skills);
+
+      try {
+        const response = await fetch(`${API_BASE}/api/v1/resume/rephrase`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server returned status ${response.status}`);
+        }
+
+        const data = await response.json();
+        contentBox.innerText = data.rephrased_resume;
+        outputBox.classList.remove('hidden');
+
+      } catch (err) {
+        alert("Error generating rephrased resume: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Rephrase & Tailor Resume</span>`;
+      }
+    }
+
     function showError(msg) {
       errorBox.textContent = msg;
       errorBox.classList.remove('hidden');
@@ -189,77 +271,5 @@
       }
     }
   </script>
-  <!-- Resume Rephraser Section -->
-<div class="mt-8 border-t border-slate-700 pt-6">
-  <h2 class="text-xl font-bold text-slate-100 mb-4">AI Resume Rephraser</h2>
-  
-  <div class="space-y-4">
-    <div>
-      <label class="block text-sm font-medium mb-2 text-slate-300">Skills to Add/Highlight</label>
-      <input type="text" id="userSkillsInput" placeholder="e.g. Java, Spring Boot, Microservices, Kubernetes, System Design" 
-        class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-    </div>
-
-    <button type="button" id="rephraseBtn" onclick="handleRephrase()"
-      class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2">
-      <span>Rephrase & Tailor Resume</span>
-    </button>
-  </div>
-
-  <!-- Rephrased Output Box -->
-  <div id="rephrasedOutputBox" class="hidden mt-6 bg-slate-900 border border-slate-700 rounded-xl p-4">
-    <div class="flex justify-between items-center mb-3">
-      <h3 class="text-sm font-semibold text-emerald-400">Optimized Resume Draft</h3>
-      <button onclick="navigator.clipboard.writeText(document.getElementById('rephrasedContent').innerText)" 
-        class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-600">
-        Copy Draft
-      </button>
-    </div>
-    <div id="rephrasedContent" class="text-xs text-slate-300 whitespace-pre-wrap font-mono leading-relaxed max-h-96 overflow-y-auto"></div>
-  </div>
-</div>
-
-<script>
-  async function handleRephrase() {
-    const file = document.getElementById('resumeInput').files[0];
-    const skills = document.getElementById('userSkillsInput').value.trim();
-    const btn = document.getElementById('rephraseBtn');
-    const outputBox = document.getElementById('rephrasedOutputBox');
-    const contentBox = document.getElementById('rephrasedContent');
-
-    if (!file) {
-      alert("Please upload a PDF resume first.");
-      return;
-    }
-    if (!skills) {
-      alert("Please enter skills to incorporate.");
-      return;
-    }
-
-    btn.disabled = true;
-    btn.innerHTML = `<span>AI is generating draft...</span>`;
-
-    const formData = new FormData();
-    formData.append('resume', file);
-    formData.append('userSkills', skills);
-
-    try {
-      const response = await fetch('http://localhost:8080/api/v1/resume/rephrase', {
-        method: 'POST',
-        body: formData
-      });
-
-      const data = await response.json();
-      contentBox.innerText = data.rephrased_resume;
-      outputBox.classList.remove('hidden');
-
-    } catch (err) {
-      alert("Error generating rephrased resume: " + err.message);
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = `<span>Rephrase & Tailor Resume</span>`;
-    }
-  }
-</script>
 </body>
 </html>
