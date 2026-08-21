@@ -8,21 +8,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.ats.Repository.AnalysisResultRepository;
-
 @RestController
 @CrossOrigin(origins = "*")
 public class ResumeController {
 
-    private final AnalysisResultRepository repository;
-
     // Reads python.ai.service.url from application.properties, defaulting to Docker service name
     @Value("${python.ai.service.url:http://python-ai-service:8000}")
     private String pythonAiUrl;
-
-    public ResumeController(AnalysisResultRepository repository) {
-        this.repository = repository;
-    }
 
     // Prevents 404 Whitelabel Error when opening root URL
     @GetMapping("/")
