@@ -17,8 +17,8 @@ public class ResumeController {
 
     private final AnalysisResultRepository repository;
 
-    // Reads from application.properties or environment variable, defaulting to localhost for local testing
-    @Value("${PYTHON_AI_URL:http://localhost:8000}")
+    // Reads python.ai.service.url from application.properties, defaulting to Docker service name
+    @Value("${python.ai.service.url:http://python-ai-service:8000}")
     private String pythonAiUrl;
 
     public ResumeController(AnalysisResultRepository repository) {

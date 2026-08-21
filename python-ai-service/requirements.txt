@@ -6,4 +6,3 @@ python-multipart
 sentence-transformers
 torch --extra-index-url https://download.pytorch.org/whl/cpu
 openai
-python.ai.service.url=http://python-ai-service:8000
