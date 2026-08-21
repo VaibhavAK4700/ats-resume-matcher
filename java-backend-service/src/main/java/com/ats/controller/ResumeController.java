@@ -1,5 +1,6 @@
 package com.ats.controller;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -11,18 +12,27 @@ import com.ats.Repository.AnalysisResultRepository;
 import com.ats.model.AnalysisResult;
 
 @RestController
-@RequestMapping("/api/v1/resume")
 @CrossOrigin(origins = "*")
 public class ResumeController {
 
     private final AnalysisResultRepository repository;
 
+    // Reads from application.properties or environment variable, defaulting to localhost for local testing
+    @Value("${PYTHON_AI_URL:http://localhost:8000}")
+    private String pythonAiUrl;
+
     public ResumeController(AnalysisResultRepository repository) {
         this.repository = repository;
     }
 
+    // Prevents 404 Whitelabel Error when opening root URL
+    @GetMapping("/")
+    public ResponseEntity<String> home() {
+        return ResponseEntity.ok("ATS Resume Matcher API is up and running!");
+    }
+
     // 1. Resume Match & Score Endpoint
-    @PostMapping("/match")
+    @PostMapping("/api/v1/resume/match")
     public ResponseEntity<?> matchResume(
             @RequestParam("resume") MultipartFile file,
             @RequestParam("jobDescription") String jobDescription) {
@@ -37,9 +47,8 @@ public class ResumeController {
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-            // Calls Python FastAPI /analyze
             ResponseEntity<AnalysisResult> response = restTemplate.postForEntity(
-                "http://python-ai-service:8000/analyze", 
+                pythonAiUrl + "/analyze", 
                 requestEntity, 
                 AnalysisResult.class
             );
@@ -49,9 +58,7 @@ public class ResumeController {
                 return ResponseEntity.status(502).body("AI service returned no analysis result");
             }
 
-            // Save result into PostgreSQL
             AnalysisResult savedResult = repository.save(analysisResult);
-
             return ResponseEntity.ok(savedResult);
 
         } catch (Exception e) {
@@ -60,7 +67,7 @@ public class ResumeController {
     }
 
     // 2. AI Resume Rephrase Endpoint
-    @PostMapping("/rephrase")
+    @PostMapping("/api/v1/resume/rephrase")
     public ResponseEntity<String> rephraseResume(
             @RequestParam("resume") MultipartFile file,
             @RequestParam("userSkills") String userSkills) {
@@ -75,9 +82,8 @@ public class ResumeController {
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-            // Calls Python FastAPI /rephrase
             ResponseEntity<String> response = restTemplate.postForEntity(
-                "http://python-ai-service:8000/rephrase", 
+                pythonAiUrl + "/rephrase", 
                 requestEntity, 
                 String.class
             );
