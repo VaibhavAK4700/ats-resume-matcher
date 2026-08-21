@@ -8,21 +8,27 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.ats.Repository.AnalysisResultRepository;
+import com.ats.model.AnalysisResult;
+
 @RestController
 @CrossOrigin(origins = "*")
 public class ResumeController {
 
-    // Reads python.ai.service.url from application.properties, defaulting to Docker service name
+    private final AnalysisResultRepository repository;
+
     @Value("${python.ai.service.url:http://python-ai-service:8000}")
     private String pythonAiUrl;
 
-    // Prevents 404 Whitelabel Error when opening root URL
+    public ResumeController(AnalysisResultRepository repository) {
+        this.repository = repository;
+    }
+
     @GetMapping("/")
     public ResponseEntity<String> home() {
         return ResponseEntity.ok("ATS Resume Matcher API is up and running!");
     }
 
-    // 1. Resume Match & Score Endpoint (Returns raw JSON String for easy debugging)
     @PostMapping("/api/v1/resume/match")
     public ResponseEntity<?> matchResume(
             @RequestParam("resume") MultipartFile file,
@@ -38,45 +44,24 @@ public class ResumeController {
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-            ResponseEntity<String> response = restTemplate.postForEntity(
+            // Map response directly to AnalysisResult class
+            ResponseEntity<AnalysisResult> response = restTemplate.postForEntity(
                 pythonAiUrl + "/analyze", 
                 requestEntity, 
-                String.class
+                AnalysisResult.class
             );
 
-            return ResponseEntity.ok(response.getBody());
+            AnalysisResult result = response.getBody();
+            if (result != null) {
+                // Save to PostgreSQL
+                AnalysisResult savedResult = repository.save(result);
+                return ResponseEntity.ok(savedResult);
+            }
+
+            return ResponseEntity.status(502).body("No result received from AI service");
 
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error in match processing: " + e.getMessage());
-        }
-    }
-
-    // 2. AI Resume Rephrase Endpoint
-    @PostMapping("/api/v1/resume/rephrase")
-    public ResponseEntity<String> rephraseResume(
-            @RequestParam("resume") MultipartFile file,
-            @RequestParam("userSkills") String userSkills) {
-        try {
-            RestTemplate restTemplate = new RestTemplate();
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("file", file.getResource());
-            body.add("user_skills", userSkills);
-
-            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> response = restTemplate.postForEntity(
-                pythonAiUrl + "/rephrase", 
-                requestEntity, 
-                String.class
-            );
-
-            return ResponseEntity.ok(response.getBody());
-
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error in rephrase processing: " + e.getMessage());
         }
     }
 }
