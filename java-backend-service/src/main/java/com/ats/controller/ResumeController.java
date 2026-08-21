@@ -9,7 +9,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ats.Repository.AnalysisResultRepository;
-import com.ats.model.AnalysisResult;
 
 @RestController
 @CrossOrigin(origins = "*")
@@ -31,7 +30,7 @@ public class ResumeController {
         return ResponseEntity.ok("ATS Resume Matcher API is up and running!");
     }
 
-    // 1. Resume Match & Score Endpoint
+    // 1. Resume Match & Score Endpoint (Returns raw JSON String for easy debugging)
     @PostMapping("/api/v1/resume/match")
     public ResponseEntity<?> matchResume(
             @RequestParam("resume") MultipartFile file,
@@ -47,19 +46,13 @@ public class ResumeController {
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-            ResponseEntity<AnalysisResult> response = restTemplate.postForEntity(
+            ResponseEntity<String> response = restTemplate.postForEntity(
                 pythonAiUrl + "/analyze", 
                 requestEntity, 
-                AnalysisResult.class
+                String.class
             );
 
-            AnalysisResult analysisResult = response.getBody();
-            if (analysisResult == null) {
-                return ResponseEntity.status(502).body("AI service returned no analysis result");
-            }
-
-            AnalysisResult savedResult = repository.save(analysisResult);
-            return ResponseEntity.ok(savedResult);
+            return ResponseEntity.ok(response.getBody());
 
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error in match processing: " + e.getMessage());
