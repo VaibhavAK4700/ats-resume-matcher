@@ -44,8 +44,13 @@ public class ResumeController {
                 AnalysisResult.class
             );
 
+            AnalysisResult analysisResult = response.getBody();
+            if (analysisResult == null) {
+                return ResponseEntity.status(502).body("AI service returned no analysis result");
+            }
+
             // Save result into PostgreSQL
-            AnalysisResult savedResult = repository.save(response.getBody());
+            AnalysisResult savedResult = repository.save(analysisResult);
 
             return ResponseEntity.ok(savedResult);
 
