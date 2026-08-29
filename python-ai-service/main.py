@@ -1,79 +1,82 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
-from sentence_transformers import SentenceTransformer, util
-import pypdf
-import io
-import re
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+import spacy
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from typing import List
 
-app = FastAPI()
+app = FastAPI(title="ATS AI Service", version="1.0")
 
-# Load model
-model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+# Load SpaCy model for tokenization and lemmatization
+try:
+    nlp = spacy.load("en_core_web_sm")
+except Exception:
+    import en_core_web_sm
+    nlp = en_core_web_sm.load()
 
-# Common filler/action words to ignore during keyword extraction
-STOPWORDS = {
-    "looking", "for", "a", "an", "the", "with", "and", "or", "in", "at", 
-    "to", "experience", "developer", "engineer", "required", "skills", 
-    "strong", "knowledge", "working", "ability", "seeking", "experienced",
-    "job", "description", "candidate", "role", "position", "proficient"
-}
+class AnalysisRequest(BaseModel):
+    # Field aliases match both snake_case (from Spring Boot WebClient) and camelCase
+    resume_text: str = Field(..., alias="resumeText")
+    job_description: str = Field(..., alias="jobDescription")
 
-@app.post("/analyze")
-async def analyze_resume(
-    file: UploadFile = File(...),
-    job_text: str = Form(
-        ..., 
-        description="Provide the job description text here",
-        examples=["Looking for a Senior Software Engineer with Java and Python experience."]
-    )
-):
+    class Config:
+        populate_by_name = True
+
+class AnalysisResponse(BaseModel):
+    matchScore: int
+    reasoning: str
+    tailoredResumeText: str
+    tailoredSummary: str
+    tailoredBullets: str
+    missingKeywords: List[str]
+
+    class Config:
+        populate_by_name = True
+
+@app.post("/analyze", response_model=AnalysisResponse)
+async def analyze_resume(request: AnalysisRequest):
     try:
-        # Read file stream ONCE
-        contents = await file.read()
-        resume_text = ""
+        resume_raw = request.resume_text
+        job_raw = request.job_description
 
-        # Parse based on file extension
-        if file.filename.lower().endswith(".pdf"):
-            try:
-                pdf_reader = pypdf.PdfReader(io.BytesIO(contents))
-                for page in pdf_reader.pages:
-                    extracted = page.extract_text()
-                    if extracted:
-                        resume_text += extracted + " "
-            except Exception:
-                raise HTTPException(status_code=400, detail="Uploaded PDF file is invalid or corrupted.")
-        else:
-            # Fallback for plain text files (.txt)
-            resume_text = contents.decode("utf-8", errors="ignore")
+        # 1. TF-IDF Cosine Similarity Calculation
+        vectorizer = TfidfVectorizer(stop_words="english")
+        tfidf_matrix = vectorizer.fit_transform([resume_raw, job_raw])
+        similarity_score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
+        match_score = int(round(similarity_score * 100))
 
-        resume_text = resume_text.strip()
-        
-        # Validation check
-        if not resume_text:
-            return {"match_score": 0.0, "missing_keywords": []}
+        # 2. SpaCy Keyword Extraction & Missing Skill Identification
+        doc_resume = nlp(resume_raw.lower())
+        doc_job = nlp(job_raw.lower())
 
-        # Calculate AI Semantic Similarity
-        resume_embedding = model.encode(resume_text, convert_to_tensor=True)
-        job_embedding = model.encode(job_text, convert_to_tensor=True)
-        cosine_sim = util.cos_sim(resume_embedding, job_embedding).item()
-        
-        score = round(max(0.0, min(100.0, cosine_sim * 100)), 2)
-
-        # Keyword Extraction & Matching
-        job_words = set(re.findall(r'\b[a-zA-Z0-9+#.]+\b', job_text.lower()))
-        required_keywords = [
-            w for w in job_words 
-            if w not in STOPWORDS and len(w) > 1 and not w.isdigit()
-        ]
-
-        resume_text_lower = resume_text.lower()
-        missing = [kw for kw in required_keywords if kw not in resume_text_lower]
-
-        return {
-            "match_score": float(score),
-            "missing_keywords": missing
+        job_keywords = {
+            token.lemma_ for token in doc_job 
+            if token.is_alpha and not token.is_stop and token.pos_ in ["NOUN", "PROPN"]
         }
+        resume_keywords = {
+            token.lemma_ for token in doc_resume 
+            if token.is_alpha and not token.is_stop
+        }
+        
+        missing = sorted(list(job_keywords - resume_keywords))[:5]
+        missing_str = ", ".join(missing) if missing else "None"
 
-    except HTTPException as he:
-        raise he
+        # 3. Generate Tailored Text Payload
+        reasoning = f"Evaluated via TF-IDF semantic vectorization. Match score: {match_score}%. Missing core terms: {missing_str}."
+        tailored_summary = f"Results-driven professional with key focus on {', '.join(list(job_keywords)[:3])}."
+        tailored_bullets = f"• Integrated key domain capabilities aligned with target position.\n• Highlighted proficiency in {missing_str}."
+
+        return AnalysisResponse(
+            matchScore=match_score,
+            reasoning=reasoning,
+            tailoredResumeText=resume_raw,
+            tailoredSummary=tailored_summary,
+            tailoredBullets=tailored_bullets,
+            missingKeywords=missing
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/health")
+async def health_check():
+    return {"status": "UP"}

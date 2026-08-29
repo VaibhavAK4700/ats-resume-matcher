@@ -1,28 +1,49 @@
-# Resume ATS Matcher (NLP / RAG Pipeline)
+# Resume ATS Matcher (NLP / Microservices Pipeline)
 
-A production-ready NLP application that analyzes resumes against job descriptions, calculates semantic similarity scores, and highlights missing keywords.
+A production-ready microservice platform that analyzes resumes against job descriptions, calculates semantic similarity scores using vector space embeddings, and highlights missing technical competencies.
 
-## 🚀 Live Demo
-[Click here to test the live ATS Matcher App](https://ats-resume-matcher-production.up.railway.app)
+---
 
-## 🏗️ Architecture & Pipeline
-1. **Document Ingestion:** PDF/DOCX parsing and text extraction.
-2. **Text Processing:** Tokenization, stop-word removal, and semantic chunking.
-3. **Embedding Generation:** Vectorization using Sentence-Transformers / HuggingFace.
-4. **Scoring Engine:** Cosine similarity calculation + LLM-based gap analysis.
+## 🏗️ System Architecture & Data Pipeline
+1. **Document Ingestion:** Apache PDFBox and Apache Tika text extraction from multi-page PDF resumes inside Spring Boot.
+2. **Text Processing & NLP:** Tokenization, stop-word filtering, and lemmatization via SpaCy (`en_core_web_sm`).
+3. **Semantic Scoring:** TF-IDF vectorization and Cosine Similarity calculation via `scikit-learn`.
+4. **Keyword Gap Analysis:** Set-theoretic missing keyword extraction filtered by Part-of-Speech (`NOUN` and `PROPN`).
+5. **Persistence & Tailoring:** Spring Data JPA storage in PostgreSQL and real-time generation of optimized draft summaries.
+
+---
 
 ## 🛠️ Tech Stack
-* **Language:** Python 3.11+
-* **Frameworks:** FastAPI / Streamlit, LangChain
-* **NLP / Models:** Sentence-Transformers, spaCy, Ollama (Local) / OpenAI API
-* **DevOps:** Docker, GitHub Actions (CI/CD)
+
+| Domain | Technologies |
+| :--- | :--- |
+| **Frontend** | Tailwind CSS, HTML5 Drag & Drop API, Asynchronous Fetch JS |
+| **Backend API** | Java 17, Spring Boot 3.2, Spring Data JPA, WebFlux (`WebClient`), Apache PDFBox |
+| **AI / NLP Microservice** | Python 3.10, FastAPI, Uvicorn, spaCy, Scikit-Learn |
+| **Database** | PostgreSQL 15 |
+| **Containerization** | Docker, Docker Compose (Multi-stage builds, non-root security compliance) |
+
+---
 
 ## 🔒 Data Privacy & GDPR Compliance
-* Runs on local open-source LLMs (via Ollama) to ensure zero third-party data transmission of personal user CVs.
+
+* **Local NLP Processing:** All text parsing, lemmatization, and similarity scoring are executed strictly within internal microservice containers—ensuring **zero third-party API data transmission** of candidate personal data.
+
+---
 
 ## 🚦 How to Run Locally
+
+### Option 1: Docker Compose Multi-Container Build (Recommended)
+
+Make sure you have [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) installed.
+
 ```bash
+# 1. Clone the repository
 git clone [https://github.com/VaibhavAK4700/resume-ats-matcher.git](https://github.com/VaibhavAK4700/resume-ats-matcher.git)
 cd resume-ats-matcher
-pip install -r requirements.txt
-python main.py
+
+# 2. Build and start PostgreSQL, Python AI service, and Spring Boot backend
+docker compose up --build -d
+
+# 3. Check container statuses
+docker compose ps

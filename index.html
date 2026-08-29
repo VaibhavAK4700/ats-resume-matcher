@@ -120,26 +120,57 @@
   </div>
 
   <script>
-    // Dynamically set API host (uses same hostname when deployed on Railway)
+    // Dynamically set API host (uses same hostname when deployed on Railway / Docker Compose)
     const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? 'http://localhost:8080'
       : '';
 
     const form = document.getElementById('matchForm');
     const resumeInput = document.getElementById('resumeInput');
+    const dropZone = document.getElementById('dropZone');
     const fileNameDisplay = document.getElementById('fileName');
     const submitBtn = document.getElementById('submitBtn');
     const resultsCard = document.getElementById('resultsCard');
     const errorBox = document.getElementById('errorBox');
 
+    // Drag & Drop event handlers
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-indigo-500', 'bg-slate-700/50');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-indigo-500', 'bg-slate-700/50');
+      }, false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files.length > 0 && files[0].type === 'application/pdf') {
+        resumeInput.files = files;
+        updateFileNameDisplay(files[0].name);
+      } else {
+        showError('Please drop a valid PDF file.');
+      }
+    });
+
     // Display selected filename
     resumeInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
-        fileNameDisplay.textContent = file.name;
-        fileNameDisplay.classList.add('text-indigo-400', 'font-medium');
+        updateFileNameDisplay(file.name);
       }
     });
+
+    function updateFileNameDisplay(name) {
+      fileNameDisplay.textContent = name;
+      fileNameDisplay.classList.add('text-indigo-400', 'font-medium');
+    }
 
     // Form submission
     form.addEventListener('submit', async (e) => {
@@ -182,25 +213,46 @@
     });
 
     function displayResults(data) {
-      document.getElementById('resultId').textContent = `Record ID: #${data.id}`;
+      if (data.analysisId || data.id) {
+        document.getElementById('resultId').textContent = `Record ID: #${data.analysisId || data.id}`;
+      }
       
-      const score = data.match_score !== null ? data.match_score : 0;
+      // Handles both snake_case and camelCase response properties
+      const score = data.matchScore !== undefined ? data.matchScore : (data.match_score || 0);
       document.getElementById('scoreText').textContent = `${score}%`;
       document.getElementById('scoreBar').style.width = `${score}%`;
 
       const missingBox = document.getElementById('missingKeywordsList');
       missingBox.innerHTML = '';
 
-      if (data.missing_keywords && data.missing_keywords.trim() !== '') {
-        const keywords = data.missing_keywords.split(',').map(s => s.trim()).filter(Boolean);
-        keywords.forEach(kw => {
+      // Normalize missing keywords output (handles Array or String fallback)
+      let keywordsArray = [];
+      const missingRaw = data.missingKeywords || data.missing_keywords;
+      
+      if (Array.isArray(missingRaw)) {
+        keywordsArray = missingRaw;
+      } else if (typeof missingRaw === 'string' && missingRaw.trim() !== '') {
+        keywordsArray = missingRaw.split(',').map(s => s.trim());
+      }
+
+      if (keywordsArray.length > 0) {
+        keywordsArray.forEach(kw => {
           const badge = document.createElement('span');
           badge.className = 'bg-red-900/50 border border-red-500/50 text-red-300 px-2.5 py-1 rounded-md';
           badge.textContent = kw;
           missingBox.appendChild(badge);
         });
+
+        // Auto-populate missing keywords into AI Rephraser input
+        document.getElementById('userSkillsInput').value = keywordsArray.join(', ');
       } else {
         missingBox.innerHTML = '<span class="text-emerald-400">All required keywords found!</span>';
+      }
+
+      // If backend returned pre-tailored resume text, render it directly
+      if (data.tailoredResumeText || data.tailored_resume_text) {
+        document.getElementById('rephrasedContent').innerText = data.tailoredResumeText || data.tailored_resume_text;
+        document.getElementById('rephrasedOutputBox').classList.remove('hidden');
       }
 
       resultsCard.classList.remove('hidden');
@@ -240,7 +292,8 @@
         }
 
         const data = await response.json();
-        contentBox.innerText = data.rephrased_resume;
+        const tailoredText = data.rephrased_resume || data.tailoredResumeText || data.tailored_resume_text;
+        contentBox.innerText = tailoredText;
         outputBox.classList.remove('hidden');
 
       } catch (err) {

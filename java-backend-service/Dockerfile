@@ -1,17 +1,24 @@
-FROM maven:3.9-eclipse-temurin-17 AS build
+# Stage 1: Build stage
+FROM maven:3.9.6-eclipse-temurin-17 AS builder
 WORKDIR /app
-
-# 1. Copy pom.xml first and download dependencies (cached layer)
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
-
-# 2. Copy source code and build package
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN mvn package -DskipTests
 
-# Final runtime image
+# Stage 2: Minimal Runtime stage (ARM64 / Mac compatible)
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+
+# Create non-root user for security compliance
+RUN addgroup --system javauser && adduser --system --ingroup javauser javauser
+
+# Copy built JAR from builder stage
+COPY --from=builder /app/target/*.jar app.jar
+RUN chown -R javauser:javauser /app
+
+USER javauser
+
 EXPOSE 8080
+
 ENTRYPOINT ["java", "-jar", "app.jar"]
