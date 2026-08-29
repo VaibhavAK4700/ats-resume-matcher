@@ -14,29 +14,15 @@ An intelligent, microservice-based Automated Tracking System (ATS) platform that
 ---
 
 ## 🚀 System Architecture
-+-------------------------------+
-                   |    Spring Boot Backend        |
-                   |       (Port 8080)             |
-                   +---------------+---------------+
-                                   |
-               1. Trigger Scrape   |   2. Post Payload
-               & Fetch Jobs        v   to /analyze
-                   +-------------------------------+
-                   |     Python AI Microservice    |
-                   |       (FastAPI @ 8000)        |
-                   +---------------+---------------+
-                                   |
-               3. Evaluates Match  |  4. Returns Scores
-               via TF-IDF / NLP    v  & Missing Skills
-                   +-------------------------------+
-                   |   Job Boards (LinkedIn, etc.) |
-                   +---------------+---------------+
-                                   |
-               5. Dispatches Email |  6. Gmail SMTP
-               Digest to Target    v
-                   +-------------------------------------------+
-                   |    notification.personal.mail@gmail.com   |
-                   +-------------------------------------------+
+```mermaid
+flowchart TD
+    A[Spring Boot Backend<br/><i>Port 8080</i>] -->|1. Trigger Scrape & Fetch Jobs| B[Python AI Microservice<br/><i>FastAPI @ Port 8000</i>]
+    B -->|2. Scrape Live Postings| C[Job Boards<br/><i>LinkedIn, Indeed, Glassdoor</i>]
+    C -->|3. Raw Job Data| B
+    B -->|4. Post Payload to /analyze| B
+    B -->|5. Match Scores & Missing Skills| A
+    A -->|6. Dispatch Email Digest| D[Gmail SMTP Server]
+    D -->|7. Target Inbox| E([notification.personal.mail@gmail.com])
 
 ---
 
