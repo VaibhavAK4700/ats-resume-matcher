@@ -16,12 +16,12 @@ An intelligent, microservice-based Automated Tracking System (ATS) platform that
 ## 🚀 System Architecture
 ```mermaid
 flowchart TD
-    A[Spring Boot Backend<br/><i>Port 8080</i>] -->|1. Trigger Scrape & Fetch Jobs| B[Python AI Microservice<br/><i>FastAPI @ Port 8000</i>]
-    B -->|2. Scrape Live Postings| C[Job Boards<br/><i>LinkedIn, Indeed, Glassdoor</i>]
+    A["Spring Boot Backend<br/><i>Port 8080</i>"] -->|1. Trigger Scrape & Fetch Jobs| B["Python AI Microservice<br/><i>FastAPI @ Port 8000</i>"]
+    B -->|2. Scrape Live Postings| C["Job Boards<br/><i>LinkedIn, Indeed, Glassdoor</i>"]
     C -->|3. Raw Job Data| B
     B -->|4. Post Payload to /analyze| B
     B -->|5. Match Scores & Missing Skills| A
-    A -->|6. Dispatch Email Digest| D[Gmail SMTP Server]
+    A -->|6. Dispatch Email Digest| D["Gmail SMTP Server"]
     D -->|7. Target Inbox| E(["notification.personal.mail@gmail.com"])
 
 ---
