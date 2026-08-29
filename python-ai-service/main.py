@@ -4,7 +4,7 @@ import spacy
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from typing import List
-
+from job_scraper import search_live_jobs
 app = FastAPI(title="ATS AI Service", version="1.0")
 
 # Load SpaCy model for tokenization and lemmatization
@@ -80,3 +80,12 @@ async def analyze_resume(request: AnalysisRequest):
 @app.get("/health")
 async def health_check():
     return {"status": "UP"}
+
+@app.get("/api/ai/scrape-jobs")
+def scrape_jobs_endpoint(
+    query: str = "Künstliche Intelligenz", 
+    location: str = "Rosenheim, Germany",
+    distance: int = 50,
+    max_results: int = 100
+):
+    return search_live_jobs(query=query, location=location, distance=distance, max_results=max_results)

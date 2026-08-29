@@ -56,7 +56,10 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/ats_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
-      AI_SERVICE_URL: http://python-ai-service:8000/analyze
+      AI_SERVICE_URL: http://python-ai-service:8000
+      SPRING_MAIL_USERNAME: notification.personal.mail@gmail.com
+      SPRING_MAIL_PASSWORD: jppw nxhy flaf swcl
+      ATS_NOTIFICATION_TARGET_EMAIL: notification.personal.mail@gmail.com
     networks:
       - ats-network
 
