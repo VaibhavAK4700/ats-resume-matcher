@@ -22,7 +22,7 @@ flowchart TD
     B -->|4. Post Payload to /analyze| B
     B -->|5. Match Scores & Missing Skills| A
     A -->|6. Dispatch Email Digest| D[Gmail SMTP Server]
-    D -->|7. Target Inbox| E([notification.personal.mail@gmail.com])
+    D -->|7. Target Inbox| E(["notification.personal.mail@gmail.com"])
 
 ---
 
