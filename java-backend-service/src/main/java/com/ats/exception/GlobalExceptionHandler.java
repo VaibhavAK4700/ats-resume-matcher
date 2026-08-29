@@ -7,6 +7,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -62,6 +63,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(payload);
     }
+    
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericError(Exception ex) {
@@ -69,6 +71,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(buildErrorPayload(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected internal server error occurred."));
     }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+public ResponseEntity<Map<String, Object>> handleNoResourceFound(NoResourceFoundException ex) {
+    log.warn("Path not found: {}", ex.getResourcePath());
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(buildErrorPayload(HttpStatus.NOT_FOUND, "Resource or endpoint not found: /" + ex.getResourcePath()));
+}
 
     private Map<String, Object> buildErrorPayload(HttpStatus status, String message) {
         Map<String, Object> payload = new HashMap<>();

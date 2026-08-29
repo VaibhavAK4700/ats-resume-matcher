@@ -95,11 +95,11 @@ public void runPipelineWithParams(String query, String location, int radius, int
     }
 }
 
-    // Triggers daily at 09:00 AM CEST
-    @Scheduled(cron = "0 0 9 * * *")
+   // Triggers daily at 09:00 AM German Time (Europe/Berlin)
+    @Scheduled(cron = "0 0 9 * * *", zone = "Europe/Berlin")
     public void executeDailyJobPipeline() {
         log.info("Starting daily automated job scraping & evaluation pipeline...");
-        runPipelineWithParams("Künstliche Intelligenz", "Rosenheim, Germany", 50, 50);
+        runPipelineWithParams("Künstliche Intelligenz", "Rosenheim, Germany", 50, 100);
     }
 
     /**
@@ -140,7 +140,7 @@ public void runPipelineWithParams(String query, String location, int radius, int
                     log.debug("Evaluated '{}' at {} - Match Score: {}%", title, company, score);
 
                     // Threshold filter (e.g., 20% or higher for TF-IDF raw scores)
-                    if (score >= 0.0) {
+                    if (score >= 40.0) {
                         topMatches.add(job);
                     }
                 }

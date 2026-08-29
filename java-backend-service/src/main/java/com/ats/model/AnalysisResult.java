@@ -13,7 +13,7 @@ import java.util.Objects;
 
 @Entity
 @Table(
-    name = "matches_analyses",
+    name = "analysis_results",
     indexes = {
         @Index(name = "idx_analysis_resume", columnList = "resume_id"),
         @Index(name = "idx_analysis_job", columnList = "job_posting_id")
