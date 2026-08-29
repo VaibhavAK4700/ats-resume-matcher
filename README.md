@@ -1,49 +1,73 @@
-# Resume ATS Matcher (NLP / Microservices Pipeline)
+# 🤖 Automated ATS Resume Matcher & Job Aggregator
 
-A production-ready microservice platform that analyzes resumes against job descriptions, calculates semantic similarity scores using vector space embeddings, and highlights missing technical competencies.
-
----
-
-## 🏗️ System Architecture & Data Pipeline
-1. **Document Ingestion:** Apache PDFBox and Apache Tika text extraction from multi-page PDF resumes inside Spring Boot.
-2. **Text Processing & NLP:** Tokenization, stop-word filtering, and lemmatization via SpaCy (`en_core_web_sm`).
-3. **Semantic Scoring:** TF-IDF vectorization and Cosine Similarity calculation via `scikit-learn`.
-4. **Keyword Gap Analysis:** Set-theoretic missing keyword extraction filtered by Part-of-Speech (`NOUN` and `PROPN`).
-5. **Persistence & Tailoring:** Spring Data JPA storage in PostgreSQL and real-time generation of optimized draft summaries.
+An intelligent, microservice-based Automated Tracking System (ATS) platform that scrapes live job postings, evaluates candidate fit via TF-IDF vectorization and SpaCy NLP analysis, and automatically dispatches ranked job digests via email.
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Architecture
 
-| Domain | Technologies |
-| :--- | :--- |
-| **Frontend** | Tailwind CSS, HTML5 Drag & Drop API, Asynchronous Fetch JS |
-| **Backend API** | Java 17, Spring Boot 3.2, Spring Data JPA, WebFlux (`WebClient`), Apache PDFBox |
-| **AI / NLP Microservice** | Python 3.10, FastAPI, Uvicorn, spaCy, Scikit-Learn |
-| **Database** | PostgreSQL 15 |
-| **Containerization** | Docker, Docker Compose (Multi-stage builds, non-root security compliance) |
+- **Backend Platform:** Java 17, Spring Boot 3, Spring Data JPA, Spring Mail
+- **AI/NLP Microservice:** Python 3.11, FastAPI, `jobspy` (Multi-board Scraper), SpaCy, Scikit-Learn
+- **Database:** PostgreSQL 16
+- **Containerization:** Docker & Docker Compose
 
 ---
 
-## 🔒 Data Privacy & GDPR Compliance
-
-* **Local NLP Processing:** All text parsing, lemmatization, and similarity scoring are executed strictly within internal microservice containers—ensuring **zero third-party API data transmission** of candidate personal data.
+## 🚀 System Architecture
++-------------------------------+
+                   |    Spring Boot Backend        |
+                   |       (Port 8080)             |
+                   +---------------+---------------+
+                                   |
+               1. Trigger Scrape   |   2. Post Payload
+               & Fetch Jobs        v   to /analyze
+                   +-------------------------------+
+                   |     Python AI Microservice    |
+                   |       (FastAPI @ 8000)        |
+                   +---------------+---------------+
+                                   |
+               3. Evaluates Match  |  4. Returns Scores
+               via TF-IDF / NLP    v  & Missing Skills
+                   +-------------------------------+
+                   |   Job Boards (LinkedIn, etc.) |
+                   +---------------+---------------+
+                                   |
+               5. Dispatches Email |  6. Gmail SMTP
+               Digest to Target    v
+                   +-------------------------------------------+
+                   |    notification,personal.mail@gmail.com   |
+                   +-------------------------------------------+
 
 ---
 
-## 🚦 How to Run Locally
+## 💡 Key Features
 
-### Option 1: Docker Compose Multi-Container Build (Recommended)
+* **Multi-Board Live Job Scraping:** Dynamically fetches active job postings across LinkedIn, Indeed, and Glassdoor without vendor API keys.
+* **Semantic ATS Keyword Evaluation:** Uses TF-IDF cosine similarity and SpaCy lemmatization to extract domain-specific noun phrases and score candidate-to-job fit.
+* **Automated Daily Email Digest:** Runs a Spring `@Scheduled` background job (09:00 AM daily) to evaluate new regional job postings and email ranked digests.
+* **On-Demand REST Automation:** Exposes parameterized REST API endpoints to run real-time target searches for specific queries, radii, and volume targets.
 
-Make sure you have [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) installed.
+---
+
+## ⚡ Quick Start with Docker
+
+### 1. Prerequisites
+Ensure you have installed:
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- `git` & `curl`
+
+### 2. Environment Configuration
+Create an `.env` file or export your SMTP App Password credentials:
 
 ```bash
-# 1. Clone the repository
-git clone [https://github.com/VaibhavAK4700/resume-ats-matcher.git](https://github.com/VaibhavAK4700/resume-ats-matcher.git)
+# Environment variables for Spring Mail
+SPRING_MAIL_USERNAME=notification.personal.mail@gmail.com
+ATS_NOTIFICATION_TARGET_EMAIL=notification.personal.mail@gmail.com
+
+
+# Clone repository
+git clone [https://github.com/your-username/resume-ats-matcher.git](https://github.com/your-username/resume-ats-matcher.git)
 cd resume-ats-matcher
 
-# 2. Build and start PostgreSQL, Python AI service, and Spring Boot backend
+# Build and start services in detached mode
 docker compose up --build -d
-
-# 3. Check container statuses
-docker compose ps
