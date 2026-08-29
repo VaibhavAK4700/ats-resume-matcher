@@ -12,7 +12,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./sql/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d ats_db"]
       interval: 5s
@@ -53,7 +53,6 @@ services:
       python-ai-service:
         condition: service_healthy
     environment:
-      TZ: Europe/Berlin
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/ats_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
