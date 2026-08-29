@@ -35,7 +35,7 @@ An intelligent, microservice-based Automated Tracking System (ATS) platform that
                5. Dispatches Email |  6. Gmail SMTP
                Digest to Target    v
                    +-------------------------------------------+
-                   |    notification,personal.mail@gmail.com   |
+                   |    notification.personal.mail@gmail.com   |
                    +-------------------------------------------+
 
 ---
