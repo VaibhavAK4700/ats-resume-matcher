@@ -6,8 +6,8 @@ services:
     restart: always
     environment:
       POSTGRES_DB: ats_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -53,13 +53,14 @@ services:
       python-ai-service:
         condition: service_healthy
     environment:
+      TZ: "Europe/Berlin"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/ats_db
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       AI_SERVICE_URL: http://python-ai-service:8000
-      SPRING_MAIL_USERNAME: notification.personal.mail@gmail.com
-      SPRING_MAIL_PASSWORD: jppw nxhy flaf swcl
-      ATS_NOTIFICATION_TARGET_EMAIL: notification.personal.mail@gmail.com
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD}
+      ATS_NOTIFICATION_TARGET_EMAIL: ${SPRING_MAIL_USERNAME}
     networks:
       - ats-network
 

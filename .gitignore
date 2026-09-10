@@ -26,6 +26,10 @@ wheels/
 .installed.cfg
 *.egg
 .env
+SPRING_MAIL_USERNAME=notification.personal.mail@gmail.com
+SPRING_MAIL_PASSWORD=your_actual_gmail_app_password
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_secure_postgres_password
 **/application-local.properties
 java-backend-service/src/main/resources/application.properties
 docker-compose.yml
