@@ -25,6 +25,8 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.env
+**/application-local.properties
 
 # ==========================================
 # HuggingFace & AI Model Cache
