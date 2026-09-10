@@ -28,6 +28,7 @@ wheels/
 .env
 **/application-local.properties
 java-backend-service/src/main/resources/application.properties
+docker-compose.yml
 # ==========================================
 # HuggingFace & AI Model Cache
 # ==========================================
