@@ -27,7 +27,7 @@ wheels/
 *.egg
 .env
 **/application-local.properties
-
+java-backend-service/src/main/resources/application.properties
 # ==========================================
 # HuggingFace & AI Model Cache
 # ==========================================
